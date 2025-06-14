@@ -16,7 +16,13 @@ app = Flask(__name__)
 
 # ✅ Correctly initialize OpenAI client (for SDK >= 1.0)
 client = OpenAI()
-subprocess.run(["playwright", "install", "chromium"])
+import subprocess
+
+try:
+    subprocess.run(["playwright", "install", "chromium"], check=True)
+except Exception as e:
+    print(f"Failed to install chromium: {e}")
+
 
 
 @app.route("/ping", methods=["GET"])
