@@ -14,10 +14,10 @@ from openai import OpenAI
 load_dotenv()
 app = Flask(__name__)
 
-# ✅ Correctly initialize OpenAI client (for SDK >= 1.0)
+#  Correctly initialize OpenAI client (for SDK >= 1.0)
 client = OpenAI()
-import subprocess
-subprocess.run(["playwright", "install", "chromium"])
+#import subprocess
+#subprocess.run(["playwright", "install", "chromium"])
 
 
 
