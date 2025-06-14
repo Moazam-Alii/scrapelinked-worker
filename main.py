@@ -4,7 +4,7 @@ import os
 import urllib.request
 from urllib.parse import urljoin
 import asyncio
-
+import subprocess
 from playwright.async_api import async_playwright
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -16,6 +16,8 @@ app = Flask(__name__)
 
 # ✅ Correctly initialize OpenAI client (for SDK >= 1.0)
 client = OpenAI()
+subprocess.run(["playwright", "install", "chromium"])
+
 
 @app.route("/ping", methods=["GET"])
 def ping():
