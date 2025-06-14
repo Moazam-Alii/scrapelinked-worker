@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install system dependencies required by Chromium (Playwright)
+# Install system dependencies (partial list needed for Python + pip)
 RUN apt-get update && apt-get install -y \
     wget curl gnupg2 ca-certificates fonts-liberation \
     libnss3 libatk-bridge2.0-0 libatk1.0-0 libcups2 \
@@ -11,19 +11,21 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-0 libgdk-pixbuf2.0-0 libasound2-data \
     && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
+WORKDIR /app
+
 # Copy and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright and Chromium
-RUN apt-get update && apt-get install -y wget && \
-    pip install playwright && playwright install chromium
+# Install Playwright and its dependencies
+RUN pip install playwright && playwright install --with-deps chromium
 
-# Copy the rest of the code
+# Copy the rest of the app
 COPY . .
 
-# Expose the port
+# Expose port
 EXPOSE 8000
 
-# Command to run the app
+# Run the app
 CMD ["python", "main.py"]
