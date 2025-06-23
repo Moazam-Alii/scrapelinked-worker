@@ -25,6 +25,7 @@ client = OpenAI()
 def ping():
     return jsonify({"status": "ok"})
 
+
 @app.route("/process", methods=["POST"])
 def process_linkedin_posts():
     try:
@@ -32,7 +33,24 @@ def process_linkedin_posts():
         linkedin_urls = data.get("linkedin_urls", [])
         google_doc_id = data.get("google_doc_id")
         create_new = data.get("create_new", False)
+        show_on_web = data.get("show_on_web", False)
 
+        if show_on_web:
+            results = asyncio.run(process_one_by_one(linkedin_urls, None, client))
+            formatted_results = [
+                {
+                    "heading": post["heading"],
+                    "cleaned_text": post["body"],
+                    "insights": generate_post_insights(client, post["body"])
+                }
+                for post in results
+            ]
+            return jsonify({
+                "status": "success",
+                "posts": formatted_results
+            }), 200
+
+        # Otherwise use Google Docs path
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             return jsonify({"status": "error", "message": "Missing or invalid Authorization header"}), 401
@@ -52,7 +70,6 @@ def process_linkedin_posts():
 
         return jsonify({
             "status": "success",
-            "message": "Posts inserted successfully",
             "doc_link": f"https://docs.google.com/document/d/{google_doc_id}/edit"
         }), 200
 
