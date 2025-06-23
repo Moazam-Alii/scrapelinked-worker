@@ -14,12 +14,7 @@ from openai import OpenAI
 load_dotenv()
 app = Flask(__name__)
 
-#  Correctly initialize OpenAI client (for SDK >= 1.0)
 client = OpenAI()
-#import subprocess
-#subprocess.run(["playwright", "install", "chromium"])
-
-
 
 @app.route("/ping", methods=["GET"])
 def ping():
@@ -33,8 +28,9 @@ def process_linkedin_posts():
         linkedin_urls = data.get("linkedin_urls", [])
         google_doc_id = data.get("google_doc_id")
         create_new = data.get("create_new", False)
-        show_on_web = data.get("show_on_web", False)
+        show_on_web = data.get("show_on_web", False)  # ✅ NEW
 
+        # ✅ If user wants to show on web, skip Google Auth/Docs
         if show_on_web:
             results = asyncio.run(process_one_by_one(linkedin_urls, None, client))
             formatted_results = [
@@ -50,7 +46,7 @@ def process_linkedin_posts():
                 "posts": formatted_results
             }), 200
 
-        # Otherwise use Google Docs path
+        # ✅ Original OAuth & Docs logic untouched
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             return jsonify({"status": "error", "message": "Missing or invalid Authorization header"}), 401
@@ -76,6 +72,7 @@ def process_linkedin_posts():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
 def clean_post_text(client, text):
     prompt = f"""
 You are a smart content cleaner. Given the following LinkedIn post content, extract only the useful text that seems like the main body of the post and try not to add the comments of the post also dont add the bio of profiles. Ignore these keywords and metadata: followers, reactions, comments, reply, student at, like, 1h, 2h, 3h, minutes ago, contact us.
@@ -91,6 +88,7 @@ You are a smart content cleaner. Given the following LinkedIn post content, extr
         temperature=0.3
     )
     return response.choices[0].message.content.strip()
+
 
 def generate_post_heading(client, cleaned_text):
     prompt = f"""
@@ -109,6 +107,7 @@ Based on the following post content, generate a short and relevant heading.
     )
     return response.choices[0].message.content.strip()
 
+
 def generate_post_insights(client, cleaned_text):
     prompt = f"""
 You are a professional writing assistant. Analyze the following LinkedIn post and extract the key insights or takeaways.
@@ -126,6 +125,7 @@ Respond with 3 to 5 clear, concise one-liner insights. Each insight should be a 
         temperature=0.5
     )
     return response.choices[0].message.content.strip()
+
 
 def save_and_upload_images(image_urls, folder, prefix, creds):
     if not os.path.exists(folder):
@@ -163,6 +163,7 @@ def save_and_upload_images(image_urls, folder, prefix, creds):
 
     return drive_file_urls, failed_urls
 
+
 async def extract_post_images(page, base_url):
     image_urls = []
     for _ in range(3):
@@ -193,6 +194,7 @@ async def extract_post_images(page, base_url):
 
     return image_urls
 
+
 async def scrape_post_content(url):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=["--disable-gpu", "--no-sandbox"])
@@ -218,6 +220,7 @@ async def scrape_post_content(url):
         image_urls = await extract_post_images(page, url)
         await browser.close()
         return content, image_urls
+
 
 def insert_multiple_posts(doc_id, posts, creds, client):
     try:
@@ -284,6 +287,7 @@ def insert_multiple_posts(doc_id, posts, creds, client):
     except Exception as e:
         return False, f"❌ Google Docs Error: {e}"
 
+
 def create_new_google_doc(title, creds):
     try:
         service = build('docs', 'v1', credentials=creds)
@@ -291,6 +295,7 @@ def create_new_google_doc(title, creds):
         return doc.get('documentId'), None
     except Exception as e:
         return None, f"❌ Error creating document: {e}"
+
 
 async def process_one_by_one(urls, creds, client):
     results = []
@@ -308,6 +313,7 @@ async def process_one_by_one(urls, creds, client):
             "failed_links": failed_images
         })
     return results
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
