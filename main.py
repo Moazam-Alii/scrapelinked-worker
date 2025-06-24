@@ -204,23 +204,26 @@ async def scrape_post_content(url):
         browser = await p.chromium.launch(headless=True, args=["--disable-gpu", "--no-sandbox"])
         page = await browser.new_page()
         await page.goto(url, timeout=60000)
-        await page.wait_for_selector("article", timeout=15000)
-        await page.wait_for_timeout(3000)
 
+        # ⏳ Wait for article or fallback
+        try:
+            await page.wait_for_selector("article", timeout=15000)
+            content = await page.inner_text("article")
+        except:
+            print(f"[WARN] 'article' not found for {url}. Falling back to <body>.")
+            content = await page.inner_text("body")
+
+        # ⬇️ Scroll down to load dynamic content
         prev_height = None
-        while True:
+        for _ in range(5):
             curr_height = await page.evaluate("document.body.scrollHeight")
             if prev_height == curr_height:
                 break
             prev_height = curr_height
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(1000)
+            await page.wait_for_timeout(1500)  # wait longer to let JS render
 
-        try:
-            content = await page.inner_text("article")
-        except:
-            content = await page.inner_text("body")
-
+        # 🖼️ Extract images after scroll
         image_urls = await extract_post_images(page, url)
         await browser.close()
         return content, image_urls
