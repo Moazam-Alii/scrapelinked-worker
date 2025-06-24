@@ -128,6 +128,10 @@ Respond with 3 to 5 clear, concise one-liner insights. Each insight should be a 
 
 
 def save_and_upload_images(image_urls, folder, prefix, creds):
+    if creds is None:
+        # ❌ Skip uploading images to Google Drive
+        return [], image_urls
+
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -160,9 +164,6 @@ def save_and_upload_images(image_urls, folder, prefix, creds):
         except Exception as e:
             print(f"Failed to process {url}: {e}")
             failed_urls.append(url)
-
-    return drive_file_urls, failed_urls
-
 
 async def extract_post_images(page, base_url):
     image_urls = []
