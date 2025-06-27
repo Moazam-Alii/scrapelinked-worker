@@ -37,7 +37,7 @@ def process_linkedin_posts():
                 {
                     "heading": post["heading"],
                     "cleaned_text": post["body"],
-                    "insights": generate_post_insights(client, post["body"]),
+                   # "insights": generate_post_insights(client, post["body"]),
                     "failed_links": post.get("failed_links", []),  # ✅ add this
                     "image_urls": post.get("image_urls", [])  
                     
