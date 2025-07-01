@@ -21,6 +21,25 @@ def ping():
     return jsonify({"status": "ok"})
 
 
+def generate_cumulative_title(client, cleaned_texts):
+    prompt = f"""
+You are an assistant that creates concise, meaningful titles based on multiple LinkedIn post contents.
+Here are the cleaned contents of several posts:
+
+--- Posts ---
+{chr(10).join(cleaned_texts)}
+
+--- Cumulative Title ---
+Respond with a short, clear and professional title (max 10 words).
+"""
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.4
+    )
+    return response.choices[0].message.content.strip()
+
+
 @app.route("/process", methods=["POST"])
 def process_linkedin_posts():
     try:
@@ -30,26 +49,26 @@ def process_linkedin_posts():
         create_new = data.get("create_new", False)
         show_on_web = data.get("show_on_web", False)  # ✅ NEW
 
-        # ✅ If user wants to show on web, skip Google Auth/Docs
         if show_on_web:
             results = asyncio.run(process_one_by_one(linkedin_urls, None, client))
+            cleaned_bodies = [post["body"] for post in results]
+            cumulative_title = generate_cumulative_title(client, cleaned_bodies)
+
             formatted_results = [
                 {
                     "heading": post["heading"],
                     "cleaned_text": post["body"],
-                   # "insights": generate_post_insights(client, post["body"]),
-                    "failed_links": post.get("failed_links", []),  # ✅ add this
-                    "image_urls": post.get("image_urls", [])  
-                    
+                    "failed_links": post.get("failed_links", []),
+                    "image_urls": post.get("image_urls", [])
                 }
                 for post in results
             ]
             return jsonify({
                 "status": "success",
+                "cumulative_title": cumulative_title,
                 "posts": formatted_results
             }), 200
 
-        # ✅ Original OAuth & Docs logic untouched
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             return jsonify({"status": "error", "message": "Missing or invalid Authorization header"}), 401
@@ -74,6 +93,7 @@ def process_linkedin_posts():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 def clean_post_text(client, text):
