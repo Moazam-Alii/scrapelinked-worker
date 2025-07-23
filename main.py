@@ -342,6 +342,6 @@ async def process_one_by_one(urls, creds, client):
     return results
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="127.0.0.1", port=8000, debug=True)
 
 
