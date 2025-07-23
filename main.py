@@ -14,8 +14,8 @@ from openai import OpenAI
 load_dotenv()
 app = Flask(__name__)
 
-client = OpenAI(api_key="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")
 
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"status": "ok"})
@@ -341,7 +341,7 @@ async def process_one_by_one(urls, creds, client):
         })
     return results
 
-
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)
+
 
