@@ -17,7 +17,7 @@
 
 ### Configure:
 
-1.Name: newsletter-ec2
+1.Name: scrapelinked-worker-ec2
 
 2.AMI: Amazon Linux 2 AMI (HVM), SSD Volume Type
 
